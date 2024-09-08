@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ui
-  namespace: <NAMESPACE>
+  namespace: user-5
 spec:
   selector:
     matchLabels:
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: ui
-        image: registry.digitalocean.com/codedjen/<NAMESPACE>-ui:latest
+        image: registry.digitalocean.com/codedjen/user-5-ui:latest
         resources:
           requests:
             memory: "16Mi"

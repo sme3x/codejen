@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: tls
-  namespace: <NAMESPACE>
+  namespace: user-5
 spec:
   secretName: tls
   issuerRef:

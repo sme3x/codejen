@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api
-  namespace: <NAMESPACE>
+  namespace: user-5
 spec:
   selector:
     matchLabels:
@@ -14,14 +14,14 @@ spec:
     spec:
       initContainers:
       - name: init-storage
-        image: registry.digitalocean.com/codedjen/<NAMESPACE>-api:latest
+        image: registry.digitalocean.com/codedjen/user-5-api:latest
         command: ['sh', '-c', 'if [ ! -d "/var/www/html/storage/framework" ]; then cp -a /storage-initial/. /var/www/html/storage; fi && chown -R 82:82 /var/www/html/storage']
         volumeMounts:
         - name: laravel-storage
           mountPath: /var/www/html/storage
       containers:
       - name: api
-        image: registry.digitalocean.com/codedjen/<NAMESPACE>-api:latest
+        image: registry.digitalocean.com/codedjen/user-5-api:latest
         resources:
           requests:
             memory: "64Mi"
