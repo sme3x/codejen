@@ -1,0 +1,29 @@
+name: Type check UI
+description: Run type check for the UI
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/load-vault-secrets
+      id: vault
+      with:
+        secrets: |
+          kv/data/github-ci NPMRC
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+    - run: echo "${{ steps.secrets.outputs }}"
+      shell: bash
+    - name: Create .npmrc
+      working-directory: ui
+      shell: bash
+      run: echo "${{ fromJson(steps.vault.outputs.secrets).NPMRC }}" > .npmrc
+    - name: Install dependencies
+      working-directory: ui
+      shell: bash
+      run: npm install
+    - name: Run type check
+      working-directory: ui
+      shell: bash
+      run: npm run type-check

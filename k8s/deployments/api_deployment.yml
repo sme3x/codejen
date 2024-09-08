@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: <NAMESPACE>
+spec:
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      initContainers:
+      - name: init-storage
+        image: registry.digitalocean.com/codedjen/<NAMESPACE>-api:latest
+        command: ['sh', '-c', 'if [ ! -d "/var/www/html/storage/framework" ]; then cp -a /storage-initial/. /var/www/html/storage; fi && chown -R 82:82 /var/www/html/storage']
+        volumeMounts:
+        - name: laravel-storage
+          mountPath: /var/www/html/storage
+      containers:
+      - name: api
+        image: registry.digitalocean.com/codedjen/<NAMESPACE>-api:latest
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+        lifecycle:
+          postStart:
+            exec:
+              command: ['sh', '-c', 'php artisan cache:clear ; php artisan config:cache ; php artisan route:cache ; php artisan event:cache ; php artisan optimize:clear ; php artisan view:cache ; php artisan migrate --force --seed']
+        env:
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: APP_NAME
+        - name: APP_URL
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: APP_URL
+        # - name: DB_DATABASE
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: db-config
+        #       key: MYSQL_DATABASE
+        # - name: DB_PASSWORD
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: db-secret
+        #       key: mysql_password
+        - name: MAIL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: api-secret
+              key: mail_username
+        - name: MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: api-secret
+              key: mail_password
+        - name: SANCTUM_STATEFUL_DOMAINS
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: SANCTUM_STATEFUL_DOMAINS
+        - name: SESSION_DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: SESSION_DOMAIN
+        volumeMounts:
+        - name: laravel-storage
+          mountPath: /var/www/html/storage
+      volumes:
+      - name: laravel-storage
+        persistentVolumeClaim:
+          claimName: api-pvc

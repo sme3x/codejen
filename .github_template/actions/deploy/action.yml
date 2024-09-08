@@ -1,0 +1,78 @@
+name: Deploy
+description: Deploys the app to the cluster
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/load-vault-secrets
+      id: vault
+      with:
+        secrets: |
+          kv/data/github-ci MAIL_USERNAME ;
+          kv/data/github-ci MAIL_PASSWORD ;
+          kv/data/github-ci DIGITAL_OCEAN_API_TOKEN ;
+          kv/data/github-ci KUBE_DOCKER_SECRETS
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ fromJson(steps.vault.outputs.secrets).DIGITAL_OCEAN_API_TOKEN }}
+    - name: Configure Secrets
+      shell: bash
+      run: |
+        replace_secret() {
+            local secret="$1"
+            local placeholder="$2"
+            local file_path="$3"
+            local encoded_secret=$(echo -n "$secret" | base64 -w 0)
+            sed -i "s|${placeholder}|${encoded_secret}|g" "$file_path"
+        }
+        replace_secret "${{ fromJson(steps.vault.outputs.secrets).MAIL_USERNAME }}" "<MAIL_USERNAME>" "k8s/secrets/api_secret.yml"
+        replace_secret "${{ fromJson(steps.vault.outputs.secrets).MAIL_PASSWORD }}" "<MAIL_PASSWORD>" "k8s/secrets/api_secret.yml"
+        # replace_secret "root" "<MYSQL_ROOT_PASSWORD>" "k8s/secrets/db_secret.yml"
+        # replace_secret "root" "<MYSQL_PASSWORD>" "k8s/secrets/db_secret.yml"
+    - name: Save DigitalOcean kubeconfig with short-lived credentials
+      shell: bash
+      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 codedjen-customer-apps
+    - name: Remove existing apps from DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl delete namespace $(awk '/name:/ {print $2}' $GITHUB_WORKSPACE/k8s/namespaces.yml) --ignore-not-found
+    - name: Create docker secrets
+      shell: bash
+      run: |
+        echo '${{ fromJson(steps.vault.outputs.secrets).KUBE_DOCKER_SECRETS }}' > k8s/docker_secrets.yml
+    - name: Deploy namespace to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/namespaces.yml
+    - name: Deploy docker-secrets to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/docker_secrets.yml -n $(awk '/name:/ {print $2}' $GITHUB_WORKSPACE/k8s/namespaces.yml)
+    - name: Deploy certificate to DigitalOcean Kubernetes
+      shell: bash
+      run: |
+        kubectl get secret codedjen-user-deployments-tls -n cert-manager -o yaml > cert-secret.yaml
+        sed -i "s|cert-manager|$(awk '/name:/ {print $2}' $GITHUB_WORKSPACE/k8s/namespaces.yml)|g" cert-secret.yaml
+        kubectl apply -n $(awk '/name:/ {print $2}' $GITHUB_WORKSPACE/k8s/namespaces.yml) -f cert-secret.yaml
+    - name: Deploy secrets to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/secrets -R
+    - name: Deploy configmaps to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/configmaps -R
+    - name: Deploy ingress to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/ingress -R
+    - name: Deploy pvcs to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/pvcs -R
+    - name: Deploy services to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/services -R
+    - name: Deploy deployments to DigitalOcean Kubernetes
+      shell: bash
+      run: kubectl apply -f $GITHUB_WORKSPACE/k8s/deployments -R
+    - name: Restart deployments
+      shell: bash
+      run: kubectl rollout restart -n $(awk '/name:/ {print $2}' $GITHUB_WORKSPACE/k8s/namespaces.yml) deployments
+    - name: Verify deployments
+      shell: bash
+      run: kubectl rollout status -n $(awk '/name:/ {print $2}' $GITHUB_WORKSPACE/k8s/namespaces.yml) deployments

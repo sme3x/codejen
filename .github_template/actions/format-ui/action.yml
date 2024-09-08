@@ -1,0 +1,32 @@
+name: Format UI
+description: Run format check for the UI
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/load-vault-secrets
+      id: vault
+      with:
+        secrets: |
+          kv/data/github-ci NPMRC
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+    - uses: ./.github/actions/load-vault-secrets
+      id: secrets
+      with:
+        secrets: |
+          kv/data/github-ci NPMRC
+    - name: Create .npmrc
+      working-directory: ui
+      shell: bash
+      run: echo "${{ fromJson(steps.vault.outputs.secrets).NPMRC }}" > .npmrc
+    - name: Install dependencies
+      working-directory: ui
+      shell: bash
+      run: npm install
+    - name: Run format check
+      working-directory: ui
+      shell: bash
+      run: npm run format-check

@@ -1,0 +1,46 @@
+name: Load Vault secrets
+description: Load secrets from Vault
+
+permissions:
+  contents: read
+  id-token: write
+
+inputs:
+  vault-url:
+    description: URL of the Vault server
+    default: https://vault.zmotaj.si
+  vault-audience:
+    description: Audience of the JWT token
+    default: https://github.com/CodeDjenAi
+  vault-auth-path:
+    description: Path to the authentication method
+    default: jwt
+  vault-role:
+    description: Role to use for authentication
+    default: github-ci
+  secrets:
+    description: Secrets to load from Vault
+    required: true
+
+outputs:
+  secrets:
+    description: Loaded secrets
+    value: ${{ toJson(steps.vault.outputs) }}
+
+runs:
+  using: composite
+  steps:
+    - uses: hashicorp/vault-action@v2.4.0
+      id: vault
+      with:
+        method: ${{ inputs.vault-auth-path }}
+        url: ${{ inputs.vault-url }}
+        role: ${{ inputs.vault-role }}
+        jwtGithubAudience: ${{ inputs.vault-audience }}
+        secrets: ${{ inputs.secrets }}
+    - name: Revoke token
+      if: always()
+      shell: bash
+      run: |
+        curl -X POST -sv -H "X-Vault-Token: ${{ env.VAULT_TOKEN }}" \
+          ${{ inputs.vault-url }}/v1/auth/token/revoke-self
