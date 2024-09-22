@@ -14,7 +14,14 @@
 				@click="toggleLocked" />
 		</div>
 		<div class="navigation__links-container">
+			<router-link
+				class="navigation__link-item"
+				to="/userss">
+				<i class="navigation__link-icon far far fa-cube"></i>
+				<div class="navigation__link-title">Userss</div>
+			</router-link>
 			<!-- GENERATOR(LINK) -->
+		
 			<router-link
 				class="navigation__link-item"
 				to="/logout">
