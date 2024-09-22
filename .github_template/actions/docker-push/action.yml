@@ -1,0 +1,21 @@
+name: Docker Push
+description: Pushes a Docker image using a private SSH key to access private repositories
+
+inputs:
+  image:
+    description: Image identifier
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/docker-login
+    - name: Build
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.image }}" ]; then
+          image=""
+        else
+          image="-${{ inputs.image }}"
+        fi
+        make "push$image"

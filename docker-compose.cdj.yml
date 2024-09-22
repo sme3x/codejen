@@ -1,0 +1,70 @@
+version: "3.1"
+
+services:
+  # db:
+  #   image: mysql
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  #     MYSQL_DATABASE: ${MYSQL_DATABASE}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  #   volumes:
+  #     - .docker/db:/var/lib/mysql
+  #   networks:
+  #     - app-network
+  #   healthcheck:
+  #     test: mysql -u root --password=${MYSQL_PASSWORD} -e "SHOW DATABASES;"
+  #     timeout: 20s
+  #     interval: 1s
+  #     retries: 120
+
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   restart: always
+  #   environment:
+  #     PMA_HOST: db
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  #   ports:
+  #     - "8888:80"
+  #   depends_on:
+  #     - db
+  #   networks:
+  #     - app-network
+
+  ui:
+    image: ${UI_IMAGE}
+    restart: always
+    networks:
+      - app-network
+
+  api:
+    image: ${API_IMAGE}
+    restart: always
+    networks:
+      - app-network
+    environment:
+      APP_NAME: ${APP_NAME}
+      APP_URL: ${APP_URL}
+      # DB_DATABASE: ${MYSQL_DATABASE}
+      # DB_PASSWORD: ${MYSQL_PASSWORD}
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
+
+  reverse-proxy:
+    image: ${PROXY_IMAGE}
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - ui
+      - api
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
