@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/Auth'
 
 import Login from '../views/Auth/Login.vue'
 import AdminApi from '@/helpers/api/AdminApi'
+import UsersList from '../views/Users/List.vue'
+import UsersEdit from '../views/Users/Edit.vue'
 /* GENERATOR(IMPORT) */
 
 const router = createRouter({
@@ -11,7 +13,7 @@ const router = createRouter({
 	routes: [
 		{
 			path: '/',
-			redirect: '/home',
+			redirect: '/userss',
 		},
 		{
 			path: '/login',
@@ -41,6 +43,27 @@ const router = createRouter({
 				window.location.reload()
 				throw new Error('Clear data')
 			},
+		},
+		{
+			path: '/userss',
+			beforeEnter: authGuard,
+			children: [
+				{
+					path: '',
+					name: 'userss-list',
+					component: UsersList,
+				},
+				{
+					path: '/userss/create',
+					name: 'userss-create',
+					component: UsersEdit,
+				},
+				{
+					path: '/userss/:id',
+					name: 'userss-edit',
+					component: UsersEdit,
+				},
+			],
 		},
 		/* GENERATOR(ROUTES) */
 		{

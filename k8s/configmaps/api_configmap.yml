@@ -2,9 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: api-config
-  namespace: <NAMESPACE>
+  namespace: user-1
 data:
   APP_NAME: "ai-generator"
-  APP_URL: "https://<NAMESPACE>.codedjen.io"
-  SANCTUM_STATEFUL_DOMAINS: "<NAMESPACE>.codedjen.io"
-  SESSION_DOMAIN: "<NAMESPACE>.codedjen.io"
+  APP_URL: "https://user-1.codedjen.io"
+  SANCTUM_STATEFUL_DOMAINS: "user-1.codedjen.io"
+  SESSION_DOMAIN: "user-1.codedjen.io"

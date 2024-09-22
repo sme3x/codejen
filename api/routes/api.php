@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\UsersController;
 /* GENERATOR(IMPORT) */
 
 /*
@@ -35,5 +36,10 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::resource('/users', UserController::class)->except('create', 'edit');
     Route::put('/users/{model}/{relation}', [UserController::class, 'updateRelation']);
 
-    /* GENERATOR(ROUTE) */
+        Route::resource("/userss", UsersController::class)->parameters([
+        "userss" => "entity"
+    ])->except("create", "edit");
+    Route::put("/userss/{entity}/{relation}", [UsersController::class, "updateRelation"]);
+
+/* GENERATOR(ROUTE) */
 });
