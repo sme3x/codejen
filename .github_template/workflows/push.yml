@@ -1,0 +1,75 @@
+name: Master Push CI
+
+on:
+  push:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-push-ui:
+    name: Build And Push UI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/docker-build
+        with:
+          image: ui
+      - uses: ./.github/actions/docker-push
+        with:
+          image: ui
+
+  build-and-push-api:
+    name: Build And Push API
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/docker-build
+        with:
+          image: api
+      - uses: ./.github/actions/docker-push
+        with:
+          image: api
+
+  # test-api:
+  #   name: Test API
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: ./.github/actions/test-api
+
+  # format-api:
+  #   name: Format API
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: ./.github/actions/format-api
+
+  # format-ui:
+  #   name: Format UI
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: ./.github/actions/format-ui
+
+  # type-check-ui:
+  #   name: Type check UI
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: ./.github/actions/type-check-ui
+
+  deploy:
+    name: Deploy
+    needs:
+      - build-and-push-ui
+      - build-and-push-api
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/deploy

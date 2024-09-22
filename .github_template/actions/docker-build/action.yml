@@ -1,0 +1,43 @@
+name: Docker Build
+description: Builds a Docker image using a private SSH key to access private repositories
+
+inputs:
+  image:
+    description: Image identifier
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Docker Login
+      uses: ./.github/actions/docker-login
+
+    - name: Load Vault Secrets
+      uses: ./.github/actions/load-vault-secrets
+      id: vault
+      with:
+        secrets: |
+          kv/data/github-ci NPMRC ;
+          kv/data/github-ci SENTRY_AUTH_TOKEN
+
+    - name: Create NPMRC
+      uses: ./.github/actions/create-npmrc
+      with:
+        npmrc: ${{ fromJson(steps.vault.outputs.secrets).NPMRC }}
+
+    - name: Set Sentry Auth Token
+      run: |
+        echo SENTRY_AUTH_TOKEN=${{ fromJson(steps.vault.outputs.secrets).SENTRY_AUTH_TOKEN }} > ui/.env.sentry-build-plugin
+      shell: bash
+      if: inputs.image == 'ui'
+
+    - name: Docker build
+      shell: bash
+      run: |
+        export GITHUB_SHA="$GITHUB_SHA"
+        if [ -z "${{ inputs.image }}" ]; then
+          image=""
+        else
+          image="-${{ inputs.image }}"
+        fi
+        make "build$image"

@@ -1,0 +1,18 @@
+name: Docker Login
+description: Logs into a Docker registry using a DigitalOcean API token
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/load-vault-secrets
+      id: vault
+      with:
+        secrets: |
+          kv/data/github-ci DIGITAL_OCEAN_API_TOKEN
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ fromJson(steps.vault.outputs.secrets).DIGITAL_OCEAN_API_TOKEN }}
+    - name: Registry Login
+      shell: bash
+      run: doctl registry login --expiry-seconds 600

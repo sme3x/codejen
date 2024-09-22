@@ -1,0 +1,13 @@
+name: Create .npmrc
+description: Creates a .npmrc with private repository credentials
+
+inputs:
+  npmrc:
+    description: .npmrc file contents
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - run: echo '${{ inputs.npmrc }}' > ui/.npmrc
+      shell: bash

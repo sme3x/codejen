@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+  namespace: <NAMESPACE>
+data:
+  MYSQL_DATABASE: "app"
